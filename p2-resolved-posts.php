@@ -3,8 +3,8 @@
  * Description: Allows you to mark P2 posts for resolution and filter by state
  * Author: Daniel Bachhuber (and Andrew Nacin)
  * Author URI: http://danielbachhuber.com/
- * Contributors: Hugo Baeta (css)
- * Version: 0.2
+ * Contributors: Hugo Baeta (css), Matt Husby
+ * Version: 0.3
  */
 
 /**
@@ -26,6 +26,9 @@ class P2_Resolved_Posts {
 
 	const taxonomy = 'p2_resolved';
 	const audit_log_key = 'p2_resolved_log';
+	
+	static $resolved_text = 'Resolved';
+	static $unresolved_text = 'Unresolved';
 
 	/**
 	 * Constructor. Saves instance and sets up initial hook.
@@ -183,17 +186,17 @@ class P2_Resolved_Posts {
 		if ( has_term( 'unresolved', self::taxonomy, get_the_id() ) ) {
 			$css[] = 'state-unresolved';
 			$link = add_query_arg( 'mark', 'resolved', $link );
-			$title = __( 'Flag as Resolved', 'p2-resolve' );
-			$text = __( 'Unresolved', 'p2-resolve' );
+			$title = __( 'Flag as ' . self::$resolved_text, 'p2-resolve' );
+			$text = __( self::$unresolved_text, 'p2-resolve' );
 		} else if ( has_term( 'resolved', self::taxonomy, get_the_id() ) ) {
 			$css[] = 'state-resolved';
 			$link = add_query_arg( 'mark', 'normal', $link );
-			$title = __( 'Remove Resolved Flag', 'p2-resolve' );
-			$text = __( 'Resolved', 'p2-resolve' );
+			$title = __( 'Remove ' . self::$resolved_text . ' Flag', 'p2-resolve' );
+			$text = __( self::$resolved_text, 'p2-resolve' );
 		} else {
 			$link = add_query_arg( 'mark', 'unresolved', $link );
-			$title = __( 'Flag as Unresolved', 'p2-resolve' );
-			$text = __( 'Flag Unresolved', 'p2-resolve' );
+			$title = __( 'Flag as ' . self::$unresolved_text, 'p2-resolve' );
+			$text = __( 'Flag ' . self::$unresolved_text, 'p2-resolve' );
 		}
 
 		$output = ' | <span class="p2-resolve-wrap"><a title="' . esc_attr( $title ) . '" href="' . esc_url( $link ) . '" class="' . esc_attr( implode( ' ', $css ) ) . '">' . esc_html( $text ) . '</a>';
@@ -364,22 +367,22 @@ class P2_Resolved_Posts {
 							original_link.addClass('state-unresolved');
 							var new_url = original_link.attr('href').replace('mark=unresolved', 'mark=resolved');
 							original_link.attr('href', new_url );
-							original_link.html('<?php _e("Unresolved","p2-resolve"); ?>');
-							original_link.attr('title','<?php _e("Flag as Resolved","p2-resolve"); ?>');
+							original_link.html('<?php _e( self::$unresolved_text, "p2-resolve" ); ?>');
+							original_link.attr('title','<?php _e( "Flag as " . self::$resolved_text, "p2-resolve" ); ?>');
 						} else if ( original_link.attr('href').indexOf('mark=resolved') != -1 ) {
 							original_link.closest('.post').removeClass('state-unresolved').addClass('state-resolved');
 							original_link.removeClass('state-unresolved').addClass('state-resolved');
 							var new_url = original_link.attr('href').replace('mark=resolved', 'mark=normal');
 							original_link.attr('href', new_url );
-							original_link.html('<?php _e("Resolved","p2-resolve"); ?>');
-							original_link.attr('title','<?php _e("Remove Resolved Flag","p2-resolve"); ?>');
+							original_link.html('<?php _e( self::$resolved_text, "p2-resolve" ); ?>');
+							original_link.attr('title','<?php _e("Remove " . self::$resolved_text . " Flag","p2-resolve"); ?>');
 						} else if ( original_link.attr('href').indexOf('mark=normal') != -1 ) {
 							original_link.closest('.post').removeClass('state-resolved');
 							original_link.removeClass('state-resolved');
 							var new_url = original_link.attr('href').replace('mark=normal', 'mark=unresolved');
 							original_link.attr('href', new_url );
-							original_link.html('<?php _e("Flag Unresolved","p2-resolve"); ?>');
-							original_link.attr('title','<?php _e("Flag as Unresolved","p2-resolve"); ?>');
+							original_link.html('<?php _e("Flag " . self::$unresolved_text,"p2-resolve"); ?>');
+							original_link.attr('title','<?php _e("Flag as " . self::$unresolved_text,"p2-resolve"); ?>');
 						}
 						// Update the audit log
 						original_link.closest('.post').find('ul.p2-resolved-posts-audit-log').prepend( data );
@@ -522,10 +525,12 @@ class P2_Resolved_Posts {
 		}
 
 		// If there's a 'resolved' or 'unresolved' state currently set
-		if ( $args['new_state'] )
+		if ( $args['new_state'] ){
+			$args['new_state'] = ( $args['new_state'] == 'resolved' ) ? self::$resolved_text : self::$unresolved_text;
 			$text = sprintf( __( '%1$s marked this %2$s<br />%3$s', 'p2-resolve' ), esc_html( $display_name ), esc_html( $args['new_state'] ), $date_time );
-		else
+		} else {
 			$text = sprintf( __( '%1$s removed resolution<br />%2$s', 'p2-resolve' ), esc_html( $display_name ), $date_time );
+		}
 
 		$html = '<li>' . $avatar . '<span class="audit-log-text">' . $text . '</span></li>';
 		return $html;
@@ -550,7 +555,19 @@ class P2_Resolved_Posts {
 				);
 		$this->log_state_change( $post_id, $args );
 	}
-
+	
+	/**
+	 * Change the name of unresolved and resolved in the UI
+	 * To enabled, include the following in your theme's functions.php:
+	 * P2_Resolved_Posts::change_resolved_names( 'Resolved Text', 'Unresolved Text' );
+	 * 
+	 * @since 0.3
+	 */
+	
+	static function change_resolved_names($resolved, $unresolved){
+		self::$resolved_text = $resolved;
+		self::$unresolved_text = $unresolved;
+	}
 }
 $p2_resolved_posts = new P2_Resolved_Posts();
 
@@ -580,15 +597,15 @@ class P2_Resolved_Posts_Widget extends WP_Widget {
 ?>
 <ul>
 <?php if ( is_home() && isset( $_GET['resolved'] ) && $_GET['resolved'] == 'unresolved' ) : ?>
-	<li><strong>&bull; <?php _e( 'Show <strong>unresolved</strong> threads', 'p2-resolved-posts' ); ?></strong></li>
+	<li><strong>&bull; <?php _e( 'Show <strong>' . self::$unresolved_text . '</strong> threads', 'p2-resolved-posts' ); ?></strong></li>
 <?php else : ?>
-	<li><a href="<?php echo esc_url( add_query_arg( 'resolved', 'unresolved', home_url() ) ); ?>"><?php _e( 'Show <strong>unresolved</strong> threads', 'p2-resolved-posts' ); ?></a></li>
+	<li><a href="<?php echo esc_url( add_query_arg( 'resolved', 'unresolved', home_url() ) ); ?>"><?php _e( 'Show <strong>' . self::$unresolved_text . '</strong> threads', 'p2-resolved-posts' ); ?></a></li>
 <?php endif; ?>
 
 <?php if ( is_tax( P2_Resolved_Posts::taxonomy, 'resolved' ) ) : ?>
-	<li><strong>&bull; <?php _e( 'Show resolved threads', 'p2-resolved-posts' ); ?></strong></li>
+	<li><strong>&bull; <?php _e( 'Show ' . self::$resolved_text . ' threads', 'p2-resolved-posts' ); ?></strong></li>
 <?php else : ?>
-	<li><a href="<?php echo esc_url( add_query_arg( 'resolved', 'resolved', home_url() ) ); ?>"><?php _e( 'Show resolved threads', 'p2-resolved-posts' ); ?></a></li>
+	<li><a href="<?php echo esc_url( add_query_arg( 'resolved', 'resolved', home_url() ) ); ?>"><?php _e( 'Show ' . self::$resolved_text . ' threads', 'p2-resolved-posts' ); ?></a></li>
 <?php endif; ?>
 
 <?php if ( is_home() && ! isset( $_GET['resolved'] ) ) : ?>
@@ -638,9 +655,9 @@ class P2_Resolved_Posts_Widget extends WP_Widget {
 
  		$widget_ops = array(
 			'classname' => 'p2-resolved-posts-show-unresolved-posts',
-			'description' => __( 'Display an (optionally filtered) list of unresolved posts', 'p2-resolved-posts' )
+			'description' => __( 'Display an (optionally filtered) list of ' . P2_Resolved_Posts::$unresolved_text .' posts', 'p2-resolved-posts' )
 		);
-		parent::__construct( 'p2_resolved_posts_show_unresolved_posts', __( 'P2 Unresolved Posts', 'p2-resolved-posts' ), $widget_ops );
+		parent::__construct( 'p2_resolved_posts_show_unresolved_posts', __( 'P2 ' . P2_Resolved_Posts::$unresolved_text .' Posts', 'p2-resolved-posts' ), $widget_ops );
 
 		add_action( 'wp_head', array( $this, 'action_wp_head' ) );
 
@@ -804,7 +821,7 @@ class P2_Resolved_Posts_Widget extends WP_Widget {
 	 		);
  		$more_link = add_query_arg( $link_args, get_site_url() );
  		if ( $title )
- 			echo $before_title . $title . '&nbsp;<a title="' . esc_attr( __( 'See all matching unresolved posts', 'p2-resolved-posts' ) ) . '" href="' . esc_url( $more_link ) . '">&raquo;</a>' . $after_title;
+ 			echo $before_title . $title . '&nbsp;<a title="' . esc_attr( __( 'See all matching ' . P2_Resolved_Posts::$unresolved_text . ' posts', 'p2-resolved-posts' ) ) . '" href="' . esc_url( $more_link ) . '">&raquo;</a>' . $after_title;
 
  		if ( $posts_per_page > 0 ) {
  			$query_args = array(
@@ -843,7 +860,7 @@ class P2_Resolved_Posts_Widget extends WP_Widget {
  				echo '<p class="p2-resolved-posts-show-unresolved-posts-pagination">';
  				if ( $unresolved_posts->found_posts > $posts_per_page )
 		 			echo '<a href="#" class="p2-resolved-posts-previous-posts p2-resolved-posts-pagination-link" class="inactive">' . __( '&larr;', 'p2-resolved-posts' ) . '</a>&nbsp;&nbsp;';
-		 		echo sprintf( __( 'Showing <span class="p2-resolved-posts-first-post">1</span>-<span class="p2-resolved-posts-last-post">%1$d</span> of <span class="p2-resolved-posts-total-posts">%2$d</span> unresolved posts'), esc_html( $posts_per_page ), esc_html( $unresolved_posts->found_posts ) );
+		 		echo sprintf( __( 'Showing <span class="p2-resolved-posts-first-post">1</span>-<span class="p2-resolved-posts-last-post">%1$d</span> of <span class="p2-resolved-posts-total-posts">%2$d</span> ' . P2_Resolved_Posts::$unresolved_text . ' posts'), esc_html( $posts_per_page ), esc_html( $unresolved_posts->found_posts ) );
 		 		if ( $unresolved_posts->found_posts > $posts_per_page )
 		 			echo '&nbsp;&nbsp;<a href="#" class="p2-resolved-posts-next-posts p2-resolved-posts-pagination-link">' . __( '&rarr;', 'p2-resolved-posts' ) . '</a>';
 		 		echo '</p>';
@@ -870,7 +887,7 @@ class P2_Resolved_Posts_Widget extends WP_Widget {
 				wp_reset_postdata();
  				echo '</ul>';
  			} else {
- 				echo '<p>' . __( 'Nice work! Everything in this list has been resolved.', 'p2-resolved-posts' ) . '</p>';
+ 				echo '<p>' . __( 'Nice work! Everything in this list has been ' . P2_Resolved_Posts::$resolved_text . '.', 'p2-resolved-posts' ) . '</p>';
  			}
  		}
 

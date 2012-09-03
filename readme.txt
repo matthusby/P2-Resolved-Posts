@@ -3,7 +3,7 @@ Contributors: danielbachhuber, automattic
 Tags: gtd, productivity, workflow, p2
 Requires at least: 3.1
 Tested up to: 3.4.1
-Stable tag: 0.2
+Stable tag: 0.3
 
 Lightweight GTD for the P2 WordPress theme.
 
@@ -36,6 +36,8 @@ If the automatic process above fails, follow these simple steps to do a manual i
 Feel free to ask a question in the forums!
 
 == Changelog ==
+= 0.3 (Sept. 3, 2012) =
+* Added abilty to customize the text for 'Resolved' and 'Unresolved' using P2_Resolved_Posts::change_resolved_names( 'Resolved Text', 'Unresolved Text' );
 
 = 0.2 (Jul. 18, 2012) =
 * Automatically mark new posts as unresolved by adding `add_filter( 'p2_resolved_posts_mark_new_as_unresolved', '__return_true' );` to your theme's functions.php. Thanks [macmeister](http://wordpress.org/support/topic/plugin-p2-resolved-posts-default-to-unresolved) for the request
